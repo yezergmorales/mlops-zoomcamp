@@ -175,4 +175,5 @@ cython_debug/
 
 # data files
 *.parquet
-notebooks/models/lin_reg.bin
+*.bin
+*.db
