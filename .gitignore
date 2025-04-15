@@ -177,5 +177,7 @@ cython_debug/
 *.parquet
 *.bin
 *.db
-*/mlruns/
-*/models/
+*mlruns/
+*models/
+*preprocessor/
+
