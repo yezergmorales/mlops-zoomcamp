@@ -3,9 +3,12 @@ data/
 .bin
 *.db
 
+src/
+
 *.parquet
 *.html
 *.csv
+*.pkl
 
 .venv
 venv
@@ -21,3 +24,5 @@ __pycache__/
 
 
 .DS_Store
+
+.env*
