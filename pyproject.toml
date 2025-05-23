@@ -12,6 +12,7 @@ keywords = ['Python', 'template', 'uv']
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "boto>=2.49.0",
+    "boto3>=1.38.22",
     "fastparquet>=2024.11.0",
     "hyperopt>=0.2.7",
     "ipykernel",
