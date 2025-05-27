@@ -2,48 +2,61 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.operators.bash import BashOperator
 from datetime import datetime, timedelta
-import sys
-import os
 from typing import Dict, Any
+import pendulum
 
-# Add the directory containing the duration-prediction.py script to the Python path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+LOCAL_TZ = pendulum.timezone("Europe/London")
 
-from duration_prediction import run
-
-default_args = {
-    'owner': 'airflow',
-    'depends_on_past': False,
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 1,
-    'retry_delay': timedelta(minutes=5),
+dag_args = {
+    "depends_on_past": False,
+    "email": ["yezerg@gmail.com"],
+    "email_on_failure": True,
+    "email_on_retry": True,
+    "retries": 1,
+    "retry_delay": timedelta(minutes=5),
+    # 'queue': 'bash_queue',
+    # 'pool': 'backfill',
+    # 'priority_weight': 10,
+    # 'end_date': datetime(2016, 1, 1),
+    # 'wait_for_downstream': False,
+    # 'sla': timedelta(hours=2),
+    # 'execution_timeout': timedelta(seconds=300),
+    # 'on_failure_callback': some_function, # or list of functions
+    # 'on_success_callback': some_other_function, # or list of functions
+    # 'on_retry_callback': another_function, # or list of functions
+    # 'sla_miss_callback': yet_another_function, # or list of functions
+    # 'trigger_rule': 'all_success'
 }
 
-def run_training(**context: Dict[str, Any]) -> None:
-    # Get the execution date from the context
-    execution_date = context['execution_date']
-    year = execution_date.year
-    month = execution_date.month
-    
-    # Run the training script
-    run(year=year, month=month)
 
-with DAG(
-    'duration_prediction_training',
-    default_args=default_args,
-    description='Train duration prediction model',
-    schedule_interval='0 0 1 * *',  # Run at midnight on the first day of each month
-    start_date=datetime(2021, 1, 1),
+dag = DAG(
+    "duration_prediction_training",
+    description="This dag trains the duration prediction model",
+    default_args=dag_args,
+    schedule="31 12 * * *",  # This is a cron expression that schedules the DAG to run daily at 12:31 PM
+    start_date=datetime(2020, 1, 1, tzinfo=LOCAL_TZ),
     catchup=False,
-    tags=['mlops'],
-) as dag:
+    tags=["mlops"],
+    params={
+        "DURATION_PREDICTION_SCRIPT_PATH": "/home/yezer/projects/mlops-zoomcamp/03-orchestration/duration-prediction.py",
+        "VENV_PATH": "/home/yezer/projects/mlops-zoomcamp",
+        "YEAR": 2021,
+        "MONTH": 1
+        }
+)
 
-    # Run the training using the existing virtual environment
-    train_model = BashOperator(
-        task_id='train_model',
-        bash_command="""
-            source .venv/bin/activate
-            python duration_prediction.py --year {{ execution_date.year }} --month {{ execution_date.month }}
-        """
-    ) 
+def tarea_func(**kwargs: Any) -> Dict[str, str]:
+    print("You are welcome to this workflow!")
+    return {"tarea0": "ok"}
+
+tarea0 = PythonOperator(task_id="tarea0", python_callable=tarea_func, dag=dag)
+
+tarea1 = BashOperator(
+    task_id="tarea1",
+    bash_command="""
+        source {{params.VENV_PATH}}/.venv/bin/activate
+        python {{params.DURATION_PREDICTION_SCRIPT_PATH}} --month {{ params.MONTH }} --year {{ params.YEAR }}
+    """,
+    dag=dag)
+
+tarea0 >> tarea1

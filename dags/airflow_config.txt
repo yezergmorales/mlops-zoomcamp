@@ -7,6 +7,11 @@
     $ pkill -f airflow
     $ rm -rf ~/airflow
     start again
+2.2 Change the default folder for dags and hide examples.
+    Look for airflow folder
+    $ nano airflow.cfg
+    also modify load_examples = False
+    $ airlow db reset
 3. Create an admin user
     $ airflow standalone
     This command will:
@@ -18,17 +23,9 @@
     The web interface will be available at http://localhost:8080
     It will show you the admin username and password in the terminal
     The scheduler and webserver will be running.
-    After that, you don't need to run standalone again. Instead, you just:
+    After that, you can
         Start the webserver
         Start the scheduler
-    If you run airflow standalone again, it will:
-    Reset your database
-    Create a new admin user
-    Overwrite your existing configuration
-4.  Start the webserver
-    # Terminal 1 - Start the webserver
-    $ airflow api-server -p 8080
-5.  Start the scheduler
-    # Terminal 2 - Start the scheduler
-    $ airflow scheduler
+    $ airflow standalone
+
 

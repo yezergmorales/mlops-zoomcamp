@@ -6,22 +6,23 @@ import xgboost as xgb
 import mlflow
 import os
 import scipy.sparse
-from typing import Union, Optional
+from typing import Union
 import numpy as np
 import argparse
 
-# To set the tracking uri: mlflow server --backend-store-uri sqlite:///backend.db
+# # To set or restart the tracking server: mlflow server --backend-store-uri sqlite:///backend.db
 mlflow.set_tracking_uri("http://127.0.0.1:5000")
 mlflow.set_experiment("nyc-taxi-experiment")
 
-
-def create_models_folder(folder_name: str) -> None:
+def create_models_folder(folder_name: str) -> str:
     script_dir = os.path.dirname(os.path.abspath(__file__))
     models_dir = os.path.join(script_dir, folder_name)
 
     if not os.path.exists(models_dir):
         os.makedirs(models_dir)
         print(f"Folder '{models_dir}' created.")
+    
+    return models_dir
 
 
 def read_dataframe(year: int, month: int) -> pd.DataFrame:
@@ -68,7 +69,7 @@ def train_model(
     X_val: scipy.sparse.csr_matrix,
     y_val: np.ndarray,
     dv: DictVectorizer,
-    models_folder: str,
+    models_dir: str,
 ) -> str:
     train = xgb.DMatrix(X_train, label=y_train)
     valid = xgb.DMatrix(X_val, label=y_val)
@@ -104,9 +105,9 @@ def train_model(
         rmse = root_mean_squared_error(y_val, y_pred)
         mlflow.log_metric("rmse", rmse)
 
-        with open(f"{models_folder}/preprocessor.b", "wb") as f_out:
+        with open(f"{models_dir}/preprocessor.b", "wb") as f_out:
             pickle.dump(dv, f_out)
-        mlflow.log_artifact(f"{models_folder}/preprocessor.b", artifact_path="preprocessor")
+        mlflow.log_artifact(f"{models_dir}/preprocessor.b", artifact_path="preprocessor")
 
         mlflow.xgboost.log_model(booster, artifact_path="models_mlflow")
 
@@ -127,7 +128,7 @@ def train_model(
 
 def run(year: int, month: int) -> None:
     models_folder = "models"
-    create_models_folder(models_folder)
+    models_dir = create_models_folder(models_folder)
 
     train_year = year
     train_month = month
@@ -137,7 +138,7 @@ def run(year: int, month: int) -> None:
     else:
         val_year = year
         val_month = month + 1
-
+    
     df_train = read_dataframe(year=train_year, month=train_month)
     df_val = read_dataframe(year=val_year, month=val_month)
 
@@ -145,11 +146,12 @@ def run(year: int, month: int) -> None:
     X_val, _ = create_X(df_val, dv)
 
     target = "duration"
-    run_id = train_model(X_train, df_train[target].values, X_val, df_val[target].values, dv, models_folder)
+    run_id = train_model(X_train, df_train[target].values, X_val, df_val[target].values, dv, models_dir)
     print(f"run_id: {run_id}")
 
     # Save the run_id to a local text file. Needed to promote the model with orchestrators
-    run_id_file = "run_id.txt"
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    run_id_file = os.path.join(script_dir, "run_id.txt")
     with open(run_id_file, "w") as f:
         f.write(run_id)
     print(f"Saved run_id to {run_id_file}")
