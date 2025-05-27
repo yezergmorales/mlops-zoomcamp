@@ -1,0 +1,34 @@
+1. We need an environment to install airflow (conda base for example)
+    $ pip install apache-airflow
+2. Init the airflow ddbb
+ $ export AIRFLOW_HOME=~/airflow (execute in cli project root)
+ $ airflow db migrate (init the database metadata)
+2.1 Remove the ddbb
+    $ pkill -f airflow
+    $ rm -rf ~/airflow
+    start again
+3. Create an admin user
+    $ airflow standalone
+    This command will:
+        Initialize the database
+        Create an admin user automatically
+        ''''admin': zBWU5ufEnXaGkFY8'''
+        Start the webserver
+        Start the scheduler
+    The web interface will be available at http://localhost:8080
+    It will show you the admin username and password in the terminal
+    The scheduler and webserver will be running.
+    After that, you don't need to run standalone again. Instead, you just:
+        Start the webserver
+        Start the scheduler
+    If you run airflow standalone again, it will:
+    Reset your database
+    Create a new admin user
+    Overwrite your existing configuration
+4.  Start the webserver
+    # Terminal 1 - Start the webserver
+    $ airflow api-server -p 8080
+5.  Start the scheduler
+    # Terminal 2 - Start the scheduler
+    $ airflow scheduler
+
