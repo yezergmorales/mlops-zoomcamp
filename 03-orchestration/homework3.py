@@ -28,10 +28,15 @@ def read_dataframe(color_line: str, year: int, month: int) -> pd.DataFrame:
     df = pd.read_parquet(url)
     print(f"raw records-{year}-{month}: df.shape: {df.shape}")
 
-    df.lpep_dropoff_datetime = pd.to_datetime(df.lpep_dropoff_datetime)
-    df.lpep_pickup_datetime = pd.to_datetime(df.lpep_pickup_datetime)
+    if color_line == "yellow":
+        df.tpep_dropoff_datetime = pd.to_datetime(df.tpep_dropoff_datetime)
+        df.tpep_pickup_datetime = pd.to_datetime(df.tpep_pickup_datetime)
+        df["duration"] = df.tpep_dropoff_datetime - df.tpep_pickup_datetime
+    else:
+        df.lpep_dropoff_datetime = pd.to_datetime(df.lpep_dropoff_datetime)
+        df.lpep_pickup_datetime = pd.to_datetime(df.lpep_pickup_datetime)
+        df["duration"] = df.lpep_dropoff_datetime - df.lpep_pickup_datetime
 
-    df["duration"] = df.lpep_dropoff_datetime - df.lpep_pickup_datetime
     df.duration = df.duration.apply(lambda td: td.total_seconds() / 60)
 
     df = df[(df.duration >= 1) & (df.duration <= 60)]
@@ -95,7 +100,7 @@ def train_model(
         booster = xgb.train(
             params=best_params,
             dtrain=train,
-            num_boost_round=30,
+            num_boost_round=1,
             evals=[(valid, "validation")],
             early_stopping_rounds=50,
         )
@@ -160,23 +165,44 @@ def run(color_line: str, year: int, month: int, tracking_uri: str, experiment_na
         f.write(run_id)
     print(f"Saved run_id to {run_id_file}")
 
+    # Registering the model with MLFlow
+    client = mlflow.MlflowClient(tracking_uri=tracking_uri)
+    experiment = client.get_experiment_by_name(experiment_name)
+    if not experiment:
+        raise ValueError(f"Experiment '{experiment_name}' not found.")
+    model_uri = f"runs:/{run_id}/models_mlflow"
+    mlflow.register_model(
+        model_uri=model_uri,
+        name=experiment_name,
+    )
+    versions = client.search_model_versions(filter_string=f"name='{experiment_name}'")
+    for version in versions:
+        if version.run_id == run_id:
+            loaded_model = mlflow.pyfunc.load_model(model_uri=model_uri)
+            print(f"---------------------> Model size: {loaded_model._model_meta.model_size_bytes}")
+            break
+    else:
+        raise ValueError(f"Model with run_id '{run_id}' not found.")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train a model on a given year and month")
-    parser.add_argument("--color_line", type=str, help="Color line for the NYC taxi data")
-    parser.add_argument("--year", type=int, help="Year for the training data")
-    parser.add_argument("--month", type=int, help="Month for the training data")
+    parser.add_argument("-cl", "--color_line", type=str, help="Color line for the NYC taxi data")
+    parser.add_argument("-y", "--year", type=int, help="Year for the training data")
+    parser.add_argument("-m", "--month", type=int, help="Month for the training data")
     parser.add_argument(
-        "--tracking_uri",
+        "-tu", "--tracking_uri",
         type=str,
         default="http://127.0.0.1:5000",
         help="MLflow tracking URI",
+        required=False,
     )
     parser.add_argument(
-        "--experiment_name",
+        "-en", "--experiment_name",
         type=str,
         default="nyc-taxi-experiment",
         help="MLflow experiment name",
+        required=False,
     )
     args = parser.parse_args()
     year = args.year
@@ -184,4 +210,8 @@ if __name__ == "__main__":
     color_line = args.color_line
     tracking_uri = args.tracking_uri
     experiment_name = args.experiment_name
-    run(color_line=color_line, year=year, month=month, tracking_uri=tracking_uri, experiment_name=experiment_name)
+    run(
+        color_line=color_line,
+        year=year, month=month,
+        tracking_uri=tracking_uri,
+        experiment_name=experiment_name)
