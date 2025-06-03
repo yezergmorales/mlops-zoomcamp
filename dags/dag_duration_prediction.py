@@ -31,6 +31,7 @@ dag = DAG(
         "LOAD_DATA_SCRIPT_PATH": "/home/yezer/projects/mlops-zoomcamp/03-orchestration/homework3_load_data.py",
         "TRANSFORM_DATA_SCRIPT_PATH": "/home/yezer/projects/mlops-zoomcamp/03-orchestration/homework3_transform_data.py",
         "TRAIN_MODEL_SCRIPT_PATH": "/home/yezer/projects/mlops-zoomcamp/03-orchestration/homework3_train_model.py",
+        "FIND_LOAD_LOGGED_MODEL_SCRIPT_PATH": "/home/yezer/projects/mlops-zoomcamp/03-orchestration/homework3_find_load_logged_model.py",
         "MODEL_FOLDER": "models",
         "VENV_PATH": "/home/yezer/projects/mlops-zoomcamp",
         "COLOR_LINE": "yellow",
@@ -106,5 +107,14 @@ task4 = BashOperator(
     dag=dag,
 )
 
+task5 = BashOperator(
+    task_id="find-load-logged-model-task",
+    bash_command="""
+        source {{params.VENV_PATH}}/.venv/bin/activate
+        python {{params.FIND_LOAD_LOGGED_MODEL_SCRIPT_PATH}}
+    """,
+    dag=dag,
+)
 
-task0 >> task1 >> task2 >> task3 >> task4
+
+task0 >> task1 >> task2 >> task3 >> task4 >> task5
