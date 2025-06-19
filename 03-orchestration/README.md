@@ -12,15 +12,13 @@
   <img src="https://markdown-videos-api.jorgenkh.no/youtube/3_Uu0rInxWI">
 </a>
 
-## 3.3 Using an Orchistrator
-
-There's no video for this unit, you can 
+## 3.3 Using an Orchestrator
 
 Now that we converted the notebook into a python script, we 
 can use an orchestrator to turn the script into a production
 pipeline.
 
-You can use ChatGPT to help you with this.
+There's no video for this unit, but you can use ChatGPT to help you with this.
 
 ### Step 1: Choosing the Tool
 
@@ -123,4 +121,6 @@ When you run it, mlflow should be accessible at `http://mlflow:5000`.
 
 Did you take notes? Add them here:
 
+* [2025 Cohort | Running Airflow + MLflow using Docker by André Calatré](https://github.com/calatre/mlops-zoomcamp/tree/main/03-orchestration)
+* [Week 3 - workflow orchestration & Prefect by hannarud](https://github.com/hannarud/mlops-zoomcamp-2025/blob/main/week3_notes.md)
 * Send a PR, add your notes above this line
