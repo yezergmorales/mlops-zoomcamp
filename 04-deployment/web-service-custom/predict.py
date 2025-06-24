@@ -50,6 +50,7 @@ def predict_endpoint(ride: Ride) -> Dict[str, float]:
 # 
 # 2. Using python directly:
 #    python predict.py
+#    uv run predict.py
 # 
 # 3. Using uvicorn with reload for development:
 #    uvicorn predict:app --host 0.0.0.0 --port 9696 --reload
