@@ -4,6 +4,11 @@
 * Putting the script into a FastAPI app
 * Packaging the app to Docker
 
+## Run the tracking server. In this case local, and artifacts in S3
+```bash
+`mlflow server --backend-store-uri sqlite:///backend.db --default-artifact-root=s3://yezer-artifacts-remote-01`
+```
+
 ## Requirements from pyproject.toml
 ```bash
 uv pip compile pyproject.toml -o requirements.txt

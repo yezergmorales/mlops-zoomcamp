@@ -2,36 +2,33 @@ import os
 import json
 import boto3
 import base64
-
+from typing import Dict, List, Any
 import mlflow
 
 kinesis_client = boto3.client('kinesis')
 
-PREDICTIONS_STREAM_NAME = os.getenv('PREDICTIONS_STREAM_NAME', 'ride_predictions')
+PREDICTIONS_STREAM_NAME = os.getenv('PREDICTIONS_STREAM_NAME', 'ride-predictions')
+RUN_ID = os.getenv('RUN_ID', '008260e4b5964963ac9d0b969c887af2')
 
-
-RUN_ID = os.getenv('RUN_ID')
-
+# Load model directly from S3 (better for Lambda)
 logged_model = f's3://mlflow-models-alexey/1/{RUN_ID}/artifacts/model'
-# logged_model = f'runs:/{RUN_ID}/model'
 model = mlflow.pyfunc.load_model(logged_model)
-
 
 TEST_RUN = os.getenv('TEST_RUN', 'False') == 'True'
 
-def prepare_features(ride):
+def prepare_features(ride: Dict[str, Any]) -> Dict[str, Any]:
     features = {}
     features['PU_DO'] = '%s_%s' % (ride['PULocationID'], ride['DOLocationID'])
     features['trip_distance'] = ride['trip_distance']
     return features
 
 
-def predict(features):
+def predict(features: Dict[str, Any]) -> float:
     pred = model.predict(features)
     return float(pred[0])
 
 
-def lambda_handler(event, context):
+def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, List[Dict[str, Any]]]:
     # print(json.dumps(event))
     
     predictions_events = []
